@@ -1,0 +1,9 @@
+Next token is: 11, Next lexeme is t2
+Next token is: 20, Next lexeme is =
+Next token is: 98, Next lexeme is 7.
+Next token is: 29, Next lexeme is ;
+Next token is: 11, Next lexeme is t2
+Next token is: 20, Next lexeme is =
+Next token is: 35, Next lexeme is 3.1415
+Next token is: 29, Next lexeme is ;
+Next token is: -1, Next lexeme is EOF
