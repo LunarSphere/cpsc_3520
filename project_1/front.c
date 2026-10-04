@@ -6,7 +6,7 @@ Reads an input file and produces a list of tokens and lexemes.
 Added support for the following:
 - Skipping '#' preprocessor directives
 - skipping '//' line comments
-- skipping '/*' block comments
+- skipping  block comments
 - reporting lexical errors 
 - handling of various operators and keywords
 - character and string literals 
@@ -427,21 +427,23 @@ static int scanCharLit(void) {
         if (nextChar != EOF) {
             addChar();
             getChar();
-        } else {
-            return lexError("unterminated character literal");
         }
-    } else if (nextChar != '\'' && nextChar != EOF) {
+    } else {
         addChar();
         getChar();
-    } else {
-        return lexError("empty character literal");
     }
-
     if (nextChar == '\'') {
         addChar(); 
         getChar();
+        if (lexemeTooLong) {
+            return lexError("lexeme is longer than 99 characters");
+        }
         return CHAR_LIT;
-    } else {
+    }
+    if (lexemeTooLong) {
+        return lexError("lexeme is longer than 99 characters");
+    }
+    else {
         return lexError("unterminated character literal");
     }
 }
@@ -489,7 +491,7 @@ static int scanCharLit(void) {
 static int scanString(void) {
     addChar(); 
     getChar();
-    while (nextChar != '"' && nextChar != EOF) {
+    while (nextChar != '"' && nextChar != EOF && nextChar != '\n') {
         if (nextChar == '\\') { 
             addChar();
             getChar();
@@ -505,8 +507,15 @@ static int scanString(void) {
     if (nextChar == '"') {
         addChar(); 
         getChar();
+        if (lexemeTooLong) {
+            return lexError("lexeme is longer than 99 characters");
+        }
         return STRING_LIT;
-    } else {
+    }
+    if (lexemeTooLong) {
+        return lexError("lexeme is longer than 99 characters");
+    }
+    else {
         return lexError("unterminated string literal");
     }
 }
@@ -608,8 +617,7 @@ static int scanNextToken(void) {
                     nextToken = scanNumber(1);
                     return nextToken;
                 } else {
-                    lookup(nextChar);
-                    getChar();
+                    nextToken = SUB_OP;
                     return nextToken;
                 }
             } else {
@@ -664,8 +672,6 @@ static int scanNextToken(void) {
                     addChar();
                     getChar();
                 }
-                addChar();
-                getChar();
                 while (charClass == LETTER || charClass == DIGIT) {
                     addChar();
                     getChar();
