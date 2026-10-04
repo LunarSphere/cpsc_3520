@@ -1,3 +1,21 @@
+/*
+Kevius Tribble
+CPSC 3520 Programming Systems
+Project 1: Lexical Analyzer 
+Reads an input file and produces a list of tokens and lexemes.
+Added support for the following:
+- Skipping '#' preprocessor directives
+- skipping '//' line comments
+- skipping '/*' block comments
+- reporting lexical errors 
+- handling of various operators and keywords
+- character and string literals 
+- numerical literals 
+- keywords 
+- symbols and operators
+*/
+
+
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
@@ -106,20 +124,54 @@ static int lookup(int ch) {
             nextToken = RIGHT_PAREN;
             break;
         case '+':
-            addChar();
-            nextToken = ADD_OP;
+        if (peekChar() == '+') {
+                addChar();
+                getChar();
+                addChar();
+                nextToken = INC_OP;
+            } else if (peekChar() == '=') {
+                addChar();
+                getChar();
+                addChar();
+                nextToken = ADD_ASSIGN;
+            } else {
+                addChar();
+                nextToken = ADD_OP;
+            }
             break;
         case '-':
             addChar();
-            nextToken = SUB_OP;
+            if (peekChar() == '-') {
+                getChar();
+                addChar();
+                nextToken = DEC_OP;
+            } else if (peekChar() == '=') {
+                getChar();
+                addChar();
+                nextToken = SUB_ASSIGN;
+            } else {
+                nextToken = SUB_OP;
+            }
             break;
         case '*':
             addChar();
-            nextToken = MULT_OP;
+            if (peekChar() == '=') {
+                getChar();
+                addChar();
+                nextToken = MUL_ASSIGN;
+            } else {
+                nextToken = MULT_OP;
+            }
             break;
         case '/':
             addChar();
-            nextToken = DIV_OP;
+            if (peekChar() == '=') {
+                getChar();
+                addChar();
+                nextToken = DIV_ASSIGN;
+            } else {
+                nextToken = DIV_OP;
+            }
             break;
 
         /* TODO: Add the remaining single-character tokens: { } ; , : %.
@@ -134,6 +186,90 @@ static int lookup(int ch) {
          *   that decision is made in scanNextToken(), not here. '/' is also
          *   handled there, where comments are skipped.) */
 
+        case '{':
+            addChar();
+            nextToken = LEFT_BRACE;
+            break;
+        case '}':
+            addChar();
+            nextToken = RIGHT_BRACE;
+            break;
+        case ';':
+            addChar();
+            nextToken = SEMICOLON;
+            break;
+        case ',':
+            addChar();
+            nextToken = COMMA;
+            break;
+        case ':':
+            addChar();
+            nextToken = COLON;
+            break;
+        case '%':
+            addChar();
+            nextToken = MOD_OP;
+            break;
+        case '=':
+            addChar();
+            if (peekChar() == '=') {
+                getChar();
+                addChar();
+                nextToken = EQ_OP;
+            } else {
+                nextToken = ASSIGN_OP;
+            }
+            break;
+        case '!':
+            addChar();
+            if (peekChar() == '=') {
+                getChar();
+                addChar();
+                nextToken = NE_OP;
+            } else {
+                nextToken = NOT_OP;
+            }
+            break;
+        case '<':
+            addChar();
+            if (peekChar() == '=') {
+                getChar();
+                addChar();
+                nextToken = LE_OP;
+            } else {
+                nextToken = LT_OP;
+            }
+            break;
+        case '>':
+            addChar();
+            if (peekChar() == '=') {
+                getChar();
+                addChar();
+                nextToken = GE_OP;
+            } else {
+                nextToken = GT_OP;
+            }
+            break;
+        case '&':
+            addChar();
+            if (peekChar() == '&') {
+                getChar();
+                addChar();
+                nextToken = AND_OP;
+            } else {
+                nextToken = lexError("illegal character");
+            }
+            break;
+        case '|':
+            addChar();
+            if (peekChar() == '|') {
+                getChar();
+                addChar();
+                nextToken = OR_OP;
+            } else {
+                nextToken = lexError("illegal character");
+            }
+            break;
         default:
             /* Example of reporting an error: consume the character, then
              * call lexError() with the matching message from the handout's
@@ -163,6 +299,60 @@ static int keywordToken(const char *word) {
      * char, double, const, main, return, if, else, for, while, do, break,
      * continue, switch, case, default. Anything else is IDENT. */
     (void)word;
+    if (strcmp(word, "int") == 0) {
+        return KW_INT;
+    }
+    if (strcmp(word, "float") == 0) {
+        return KW_FLOAT;
+    }
+    if (strcmp(word, "void") == 0) {
+        return KW_VOID;
+    }
+    if (strcmp(word, "char") == 0) {
+        return KW_CHAR;
+    }
+    if (strcmp(word, "double") == 0) {
+        return KW_DOUBLE;
+    }
+    if (strcmp(word, "const") == 0) {
+        return KW_CONST;
+    }
+    if (strcmp(word, "main") == 0) {
+        return KW_MAIN;
+    }
+    if (strcmp(word, "return") == 0) {
+        return KW_RETURN;
+    }
+    if (strcmp(word, "if") == 0) {
+        return KW_IF;
+    }
+    if (strcmp(word, "else") == 0) {
+        return KW_ELSE;
+    }
+    if (strcmp(word, "for") == 0) {
+        return KW_FOR;
+    }
+    if (strcmp(word, "while") == 0) {
+        return KW_WHILE;
+    }
+    if (strcmp(word, "do") == 0) {
+        return KW_DO;
+    }
+    if (strcmp(word, "break") == 0) {
+        return KW_BREAK;
+    }
+    if (strcmp(word, "continue") == 0) {
+        return KW_CONTINUE;
+    }
+    if (strcmp(word, "switch") == 0) {
+        return KW_SWITCH;
+    }
+    if (strcmp(word, "case") == 0) {
+        return KW_CASE;
+    }
+    if (strcmp(word, "default") == 0) {
+        return KW_DEFAULT;
+    }
     return IDENT;
 }
 
@@ -213,8 +403,98 @@ int peekChar(void) {
     return c;
 }
 
+ /* 
+ * scanCharLit - scans a character literal.
+ * Returns the token code for a character literal (CHAR_LIT) if successful, 
+ * or calls lexError() with the appropriate message if there is an error.
+ */
+static int scanCharLit(void) {
+    addChar(); 
+    getChar();
+    if (nextChar == '\\') { 
+        addChar();
+        getChar();
+        if (nextChar != EOF) {
+            addChar();
+            getChar();
+        } else {
+            return lexError("unterminated character literal");
+        }
+    } else if (nextChar != '\'' && nextChar != EOF) {
+        addChar();
+        getChar();
+    } else {
+        return lexError("empty character literal");
+    }
+
+    if (nextChar == '\'') {
+        addChar(); 
+        getChar();
+        return CHAR_LIT;
+    } else {
+        return lexError("unterminated character literal");
+    }
+}
+
+/*
+scanNumber - scans a numeric literal, which may be an integer or a floating-point number.
+hasDot: indicates whether a decimal point has already been encountered (1 for yes, 0 for no).
+Returns the token code for an integer literal (INT_LIT) or a floating-point
+literal (FLOAT_LIT) if successful, or calls lexError() with the appropriate message if there is an error.
+*/
+   static int scanNumber(int hasDot) {
+       while (charClass == DIGIT) { 
+        addChar(); 
+        getChar(); 
+    }
+       if (!hasDot && nextChar == '.') {
+           addChar(); getChar();
+           hasDot = 1;
+           if (charClass != DIGIT)
+               return lexError("malformed floating-point literal");
+           while (charClass == DIGIT) { addChar(); getChar(); }
+       }
+       if (nextChar == '.') {
+           while (charClass == DIGIT || nextChar == '.') { addChar(); getChar(); }
+           return lexError("too many decimal points in number");
+       }
+       if (lexemeTooLong)
+           return lexError("lexeme is longer than 99 characters");
+       return hasDot ? FLOAT_LIT : INT_LIT;
+   }
+
+
+/*
+ * scanString - scans a string literal.
+ * Returns the token code for a string literal (STRING_LIT) if successful,
+ * or calls lexError() with the appropriate message if there is an error.
+ */
+static int scanString(void) {
+    addChar(); 
+    getChar();
+    while (nextChar != '"' && nextChar != EOF) {
+        if (nextChar == '\\') { 
+            addChar();
+            getChar();
+            if (nextChar != EOF) {
+                addChar();
+                getChar();
+            }
+        } else {
+            addChar();
+            getChar();
+        }
+    }
+    if (nextChar == '"') {
+        addChar(); 
+        getChar();
+        return STRING_LIT;
+    } else {
+        return lexError("unterminated string literal");
+    }
+}
 static int scanNextToken(void) {
-        /* The loop lets us skip things that produce no tokens (comments and
+    /* The loop lets us skip things that produce no tokens (comments and
      * preprocessor directives) and keep scanning for the next real token.
      * Use "continue;" after skipping one of them. */
     for (;;) {
@@ -228,6 +508,14 @@ static int scanNextToken(void) {
          * to the end of the line (as with // comments) and continue.
          * A line like #include <stdio.h> then produces no tokens. */
 
+        if (nextChar == '#') {
+            /* Skip the rest of the line */
+            while (nextChar != '\n' && nextChar != EOF) {
+                getChar();
+            }
+            continue;
+        }
+
         /* TODO: Handle '/': peek with peekChar(). "//" starts a line
          * comment and a slash followed by a star starts a block comment;
          * skip each without producing a token and continue. An
@@ -237,6 +525,45 @@ static int scanNextToken(void) {
          * is DIV_ASSIGN; any other '/' is DIV_OP (lookup() already
          * handles the plain case, so only intercept the comment and '/='
          * cases here). */
+        if (nextChar == '/') {
+            int peek = peekChar();
+            if (peek == '/') {
+                // line comment 
+                while (nextChar != '\n' && nextChar != EOF) {
+                    getChar();
+                }
+                continue;
+            } else if (peek == '*') {
+                // block comment 
+                getChar(); 
+                getChar(); 
+                while (1) {
+                    if (nextChar == EOF) {
+                        strcpy(lexeme, "/*");
+                        return lexError("unterminated block comment");
+                    } else if (nextChar == '*') {
+                        getChar();
+                        if (nextChar == '/') {
+                            getChar(); 
+                            break;
+                        }
+                    } else {
+                        getChar();
+                    }
+                }
+                continue;
+            } else if (peek == '=') {
+                addChar(); 
+                getChar(); 
+                addChar();
+                nextToken = DIV_ASSIGN;
+                return nextToken;
+            } else {
+                lookup(nextChar);
+                getChar();
+                return nextToken;
+            }
+        }
 
         /* TODO: A '-' immediately followed by a digit starts a negative
          * numeric literal (-1 is one INT_LIT, -1.5 is one FLOAT_LIT), and
@@ -246,9 +573,51 @@ static int scanNextToken(void) {
          * below). Otherwise let lookup() choose SUB_OP, DEC_OP (--),
          * or SUB_ASSIGN (-=). Assign the helper result to nextToken. */
 
+        if (nextChar == '-') {
+            int peek = peekChar();
+            if (isdigit(peek)) {
+                addChar(); 
+                getChar(); 
+                nextToken = scanNumber(1);
+                return nextToken;
+            } else if (peek == '.') {
+                addChar(); 
+                getChar(); 
+                peek = peekChar();
+                if (isdigit(peek)) {
+                    addChar(); 
+                    getChar(); 
+                    nextToken = scanNumber(1);
+                    return nextToken;
+                } else {
+                    lookup(nextChar);
+                    getChar();
+                    return nextToken;
+                }
+            } else {
+                lookup(nextChar);
+                getChar();
+                return nextToken;
+            }
+        }
+
         /* TODO: A '.' immediately followed by a digit starts a floating
          * literal (.5 is one FLOAT_LIT): scan it with the same helper.
          * Any other '.' is an illegal character (lookup() default). */
+
+        if (nextChar == '.') {
+            int peek = peekChar();
+            if (isdigit(peek)) {
+                addChar();
+                getChar();
+                nextToken = scanNumber(0);
+                return nextToken;
+            } else {
+                lookup(nextChar);
+                getChar();
+                return nextToken;
+            }
+        }
 
         /* TODO: A '"' starts a string literal and '\'' starts a character
          * literal. Write helpers scanString() and scanCharLit() that
@@ -258,10 +627,25 @@ static int scanNextToken(void) {
          * getChar() afterwards: the helper leaves nextChar on the first
          * unconsumed character, just like the number helper). */
 
+        if (nextChar == '"') {
+            nextToken = scanString();
+            return nextToken;
+        }
+        if (nextChar == '\'') {
+            nextToken = scanCharLit();
+            return nextToken;
+        }
+
+
+
         switch (charClass) {
             case LETTER:
                 /* TODO: Classify '_' as LETTER in getChar() so it can
                  * start or continue an identifier in this same loop. */
+                if (nextChar == '_') {
+                    addChar();
+                    getChar();
+                }
                 addChar();
                 getChar();
                 while (charClass == LETTER || charClass == DIGIT) {
@@ -271,6 +655,9 @@ static int scanNextToken(void) {
                 /* TODO: If lexemeTooLong is set, the identifier ran past 99
                  * characters. It has been fully consumed and the buffer holds
                  * the first 99: return lexError("lexeme is longer than 99 characters"). */
+                if (lexemeTooLong) {
+                    return lexError("lexeme is longer than 99 characters");
+                }
                 nextToken = keywordToken(lexeme);
                 return nextToken;
 
@@ -294,9 +681,8 @@ static int scanNextToken(void) {
                  * character. Assign its result to nextToken and return it.
                  * A first dot without a digit takes priority: 1..2 is
                  * an error for 1., followed by FLOAT_LIT(.2). */
-                nextToken = INT_LIT;
+                nextToken = scanNumber(0);
                 return nextToken;
-
             case UNKNOWN:
                 lookup(nextChar);
                 getChar();
