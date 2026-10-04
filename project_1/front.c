@@ -213,8 +213,8 @@ static int lookup(int ch) {
         case '=':
             addChar();
             if (peekChar() == '=') {
-                getChar();
-                addChar();
+                getChar(); // consume the '='
+                addChar(); // add the second '=' to the lexeme
                 nextToken = EQ_OP;
             } else {
                 nextToken = ASSIGN_OP;
@@ -299,6 +299,7 @@ static int keywordToken(const char *word) {
      * char, double, const, main, return, if, else, for, while, do, break,
      * continue, switch, case, default. Anything else is IDENT. */
     (void)word;
+    // Check for keywords and return the corresponding token code
     if (strcmp(word, "int") == 0) {
         return KW_INT;
     }
@@ -368,6 +369,7 @@ static void addChar(void) {
 }
 
 static void getChar(void) {
+    // classify underscore as a letter
     if (nextChar == '\n') {
         lineNumber++;
     }
@@ -379,7 +381,12 @@ static void getChar(void) {
         charClass = LETTER;
     } else if (isdigit((unsigned char)nextChar)) {
         charClass = DIGIT;
-    } else {
+    } 
+    // added underscore to be classified as a letter 
+    else if (nextChar == '_') {
+        charClass = LETTER;
+    }
+    else {
         charClass = UNKNOWN;
     }
 }
@@ -389,6 +396,9 @@ static void getNonBlank(void) {
         getChar();
     }
 }
+
+
+// some helper functions 
 
 /*
  * peekChar - look at the next input character without consuming it.
@@ -405,7 +415,7 @@ int peekChar(void) {
 
  /* 
  * scanCharLit - scans a character literal.
- * Returns the token code for a character literal (CHAR_LIT) if successful, 
+ * Returns the token code for a character literal if successful, 
  * or calls lexError() with the appropriate message if there is an error.
  */
 static int scanCharLit(void) {
@@ -437,25 +447,32 @@ static int scanCharLit(void) {
 }
 
 /*
-scanNumber - scans a numeric literal, which may be an integer or a floating-point number.
-hasDot: indicates whether a decimal point has already been encountered (1 for yes, 0 for no).
-Returns the token code for an integer literal (INT_LIT) or a floating-point
-literal (FLOAT_LIT) if successful, or calls lexError() with the appropriate message if there is an error.
-*/
+ * scanNumber - scans a numeric literal, (int or float)
+ * hasDot: has decimal point been encountered
+ * Returns the token code for an integer or float literal if successful, 
+ * or calls lexError() with the appropriate message if there is an error.
+ */
    static int scanNumber(int hasDot) {
        while (charClass == DIGIT) { 
         addChar(); 
         getChar(); 
     }
        if (!hasDot && nextChar == '.') {
-           addChar(); getChar();
+           addChar(); 
+           getChar();
            hasDot = 1;
            if (charClass != DIGIT)
                return lexError("malformed floating-point literal");
-           while (charClass == DIGIT) { addChar(); getChar(); }
+           while (charClass == DIGIT) { 
+            addChar(); 
+            getChar(); 
+        }
        }
        if (nextChar == '.') {
-           while (charClass == DIGIT || nextChar == '.') { addChar(); getChar(); }
+           while (charClass == DIGIT || nextChar == '.') { 
+            addChar(); 
+            getChar(); 
+        }
            return lexError("too many decimal points in number");
        }
        if (lexemeTooLong)
@@ -556,6 +573,7 @@ static int scanNextToken(void) {
                 addChar(); 
                 getChar(); 
                 addChar();
+                getChar();
                 nextToken = DIV_ASSIGN;
                 return nextToken;
             } else {
@@ -578,7 +596,7 @@ static int scanNextToken(void) {
             if (isdigit(peek)) {
                 addChar(); 
                 getChar(); 
-                nextToken = scanNumber(1);
+                nextToken = scanNumber(0);
                 return nextToken;
             } else if (peek == '.') {
                 addChar(); 
@@ -610,7 +628,7 @@ static int scanNextToken(void) {
             if (isdigit(peek)) {
                 addChar();
                 getChar();
-                nextToken = scanNumber(0);
+                nextToken = scanNumber(1);
                 return nextToken;
             } else {
                 lookup(nextChar);
